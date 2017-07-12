@@ -1,0 +1,85 @@
+cmake_minimum_required(VERSION 3.8.2 FATAL_ERROR)
+project(pdf VERSION 0.9.5 LANGUAGES C CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(MSVC)
+  set(CMAKE_CXX_FLAGS "/permissive- /std:c++latest ${CMAKE_CXX_FLAGS} /utf-8")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /manifestuac:NO /ignore:4099 /ignore:4098")
+  add_definitions(-D_UNICODE -DUNICODDE -DWIN32_LEAN_AND_MEAN -DNOMINMAX)
+  add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_ATL_SECURE_NO_DEPRECATE)
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS)
+  add_definitions(-DWINVER=0x0A00 -D_WIN32_WINNT=0x0A00)
+else()
+  if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    set(CMAKE_CXX_FLAGS "-I/opt/llvm/include/c++/v1 -isystem /usr/include ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "-L/opt/llvm/lib ${CMAKE_EXE_LINKER_FLAGS}")
+  endif()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -fno-omit-frame-pointer -fcolor-diagnostics")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra -Werror -Wno-unused -Wno-unused-parameter")
+endif()
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER build)
+
+find_package(compat REQUIRED PATHS "${CMAKE_CURRENT_LIST_DIR}/../compat")
+find_package(freetype REQUIRED PATHS "${CMAKE_CURRENT_LIST_DIR}/../freetype")
+find_package(jpeg REQUIRED PATHS "${CMAKE_CURRENT_LIST_DIR}/../jpeg")
+find_package(png REQUIRED PATHS "${CMAKE_CURRENT_LIST_DIR}/../png")
+find_package(zlib REQUIRED PATHS "${CMAKE_CURRENT_LIST_DIR}/../zlib")
+
+set(PODOFO_HAVE_PNG_LIB TRUE)
+set(PODOFO_HAVE_JPEG_LIB TRUE)
+#set(PODOFO_HAVE_OPENSSL TRUE)
+#set(PODOFO_HAVE_OPENSSL_1_1 TRUE)
+
+set(PODOFO_MAIN_CMAKELISTS_READ TRUE)
+set(PODOFO_BUILD_STATIC FALSE)
+set(PODOFO_BUILD_SHARED TRUE)
+
+set(PODOFO_VERSION_MAJOR "0")
+set(PODOFO_VERSION_MINOR "9")
+set(PODOFO_VERSION_PATCH "5")
+set(PODOFO_SOVERSION "${PODOFO_VERSION_MAJOR}.${PODOFO_VERSION_MINOR}.${PODOFO_VERSION_PATCH}")
+set(PODOFO_LIBVERSION "${PODOFO_SOVERSION}")
+
+set(PODOFO_MULTI_THREAD TRUE)
+set(PODOFO_NO_FONTMANAGER TRUE)
+
+include(CheckIncludeFile)
+check_include_file("strings.h" PODOFO_HAVE_STRINGS_H)
+check_include_file("arpa/inet.h" PODOFO_HAVE_ARPA_INET_H)
+check_include_file("winsock2.h" PODOFO_HAVE_WINSOCK2_H)
+check_include_file("mem.h" PODOFO_HAVE_MEM_H)
+check_include_file("ctype.h" PODOFO_HAVE_CTYPE_H)
+check_include_file("stdint.h" PODOFO_HAVE_STDINT_H)
+check_include_file("BaseTsd.h" PODOFO_HAVE_BASETSD_H)
+check_include_file("sys/types.h" PODOFO_HAVE_SYS_TYPES_H)
+
+include(TestBigEndian)
+test_big_endian(TEST_BIG)
+
+configure_file(src/podofo_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/podofo_config.h)
+
+file(GLOB_RECURSE headers include/*.h)
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include PREFIX include FILES ${headers})
+
+file(GLOB_RECURSE sources src/*.h src/*.cpp)
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src PREFIX src FILES ${sources})
+
+add_library(${PROJECT_NAME} SHARED ${headers} ${sources} res/podofo.rc)
+target_include_directories(${PROJECT_NAME} PUBLIC include ${CMAKE_CURRENT_BINARY_DIR} PRIVATE src src/podofo src/podofo/base src/podofo/doc)
+target_compile_definitions(${PROJECT_NAME} PUBLIC podofo_EXPORTS=1)
+target_link_libraries(${PROJECT_NAME} PRIVATE compat freetype jpeg png zlib $<$<CXX_COMPILER_ID:MSVC>:ws2_32>)
+
+set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+if(CMAKE_BINARY_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
+  install(TARGETS ${PROJECT_NAME} DESTINATION lib/$<LOWER_CASE:$<CONFIG>>)
+  if(NOT CMAKE_INSTALL_PREFIX STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    install(FILES ${PROJECT_NAME}-config.cmake DESTINATION .)
+    install(DIRECTORY include DESTINATION .)
+  endif()
+endif()
