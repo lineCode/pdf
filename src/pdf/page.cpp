@@ -47,7 +47,7 @@ public:
 };
 
 page::page(document& doc, rect ps) :
-  impl_(std::make_unique<impl>(doc, PdfRect(ps.x, ps.cy - ps.y, ps.cx, ps.cy))) {}
+  impl_(std::make_unique<impl>(doc, PdfRect(ps.x, -(ps.cy - ps.y), ps.cx, -ps.cy))) {}
 
 page::page(document& doc, preset preset, bool landscape) {
   auto size = ePdfPageSize_A4;
