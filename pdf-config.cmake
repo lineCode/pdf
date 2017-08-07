@@ -1,6 +1,3 @@
-# http://podofo.sourceforge.net/
-# Version: 0.9.5
-
 if(NOT TARGET pdf)
   find_package(compat QUIET PATHS "${CMAKE_CURRENT_LIST_DIR}/../compat")
   find_library(pdf_debug pdf PATHS ${CMAKE_CURRENT_LIST_DIR}/lib/debug NO_DEFAULT_PATH)

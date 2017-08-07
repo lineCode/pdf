@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 if(MSVC)
   set(CMAKE_CXX_FLAGS "/permissive- /std:c++latest ${CMAKE_CXX_FLAGS} /utf-8")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /manifestuac:NO /ignore:4099 /ignore:4098")
-  add_definitions(-D_UNICODE -DUNICODDE -DWIN32_LEAN_AND_MEAN -DNOMINMAX)
+  add_definitions(-D_UNICODE -DUNICODDE -DWIN32_LEAN_AND_MEAN)
   add_definitions(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE -D_ATL_SECURE_NO_DEPRECATE)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS)
   add_definitions(-DWINVER=0x0A00 -D_WIN32_WINNT=0x0A00)
@@ -62,6 +62,18 @@ check_include_file("sys/types.h" PODOFO_HAVE_SYS_TYPES_H)
 include(TestBigEndian)
 test_big_endian(TEST_BIG)
 
+set(PDF_INT8_TYPENAME int8_t)
+set(PDF_INT16_TYPENAME int16_t)
+set(PDF_INT32_TYPENAME int32_t)
+set(PDF_INT64_TYPENAME int64_t)
+set(PDF_UINT8_TYPENAME uint8_t)
+set(PDF_UINT16_TYPENAME uint16_t)
+set(PDF_UINT32_TYPENAME uint32_t)
+set(PDF_UINT64_TYPENAME uint64_t)
+
+set(SZ_INT64 int64_t)
+set(SZ_LONG long)
+
 configure_file(src/podofo_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/podofo_config.h)
 
 file(GLOB_RECURSE headers include/*.h)
@@ -72,8 +84,12 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src PREFIX src FILES ${sources})
 
 add_library(${PROJECT_NAME} SHARED ${headers} ${sources} res/podofo.rc)
 target_include_directories(${PROJECT_NAME} PUBLIC include ${CMAKE_CURRENT_BINARY_DIR} PRIVATE src src/podofo src/podofo/base src/podofo/doc)
-target_compile_definitions(${PROJECT_NAME} PUBLIC podofo_EXPORTS=1)
+target_compile_definitions(${PROJECT_NAME} PUBLIC podofo_EXPORTS=1 PRIVATE BUILDING_PODOFO=1)
 target_link_libraries(${PROJECT_NAME} PRIVATE compat freetype jpeg png zlib $<$<CXX_COMPILER_ID:MSVC>:ws2_32>)
+
+if(MSVC)
+  target_compile_options(${PROJECT_NAME} PRIVATE /wd4244 /wd4267)
+endif()
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 

@@ -23,7 +23,7 @@
 #endif // _MSC_VER
 #endif // _MSC_VER
 
-// Make sure that DEBUG is defined
+// Make sure that DEBUG is defined 
 // for debug builds on Windows
 // as Visual Studio defines only _DEBUG
 #ifdef _DEBUG
@@ -75,8 +75,8 @@
 #include <malloc.h>
 #endif
 
-// Disable usage of min() and max() macros
-#if defined(_WIN32) && !defined(__MINGW32__) && !defined(NOMINMAX)
+// Disable usage of min() and max() macros 
+#if defined(_WIN32) && !defined(__MINGW32__)
 #define NOMINMAX
 #endif
 
@@ -84,21 +84,27 @@
 // because we detect the right underlying type name to use with
 // CMake. Use typedefs rather than macros for saner error messages
 // etc.
-#include <cstdint>
-
 namespace PoDoFo {
-    typedef std::int8_t pdf_int8;
-    typedef std::int16_t pdf_int16;
-    typedef std::int32_t pdf_int32;
-    typedef std::int64_t pdf_int64;
-    typedef std::uint8_t pdf_uint8;
-    typedef std::uint16_t pdf_uint16;
-    typedef std::uint32_t pdf_uint32;
-    typedef std::uint64_t pdf_uint64;
+    typedef PDF_INT8_TYPENAME  pdf_int8;
+    typedef PDF_INT16_TYPENAME  pdf_int16;
+    typedef PDF_INT32_TYPENAME  pdf_int32;
+    typedef PDF_INT64_TYPENAME  pdf_int64;
+    typedef PDF_UINT8_TYPENAME pdf_uint8;
+    typedef PDF_UINT16_TYPENAME pdf_uint16;
+    typedef PDF_UINT32_TYPENAME pdf_uint32;
+    typedef PDF_UINT64_TYPENAME pdf_uint64;
 };
+#undef PDF_INT8_TYPENAME
+#undef PDF_INT16_TYPENAME
+#undef PDF_INT32_TYPENAME
+#undef PDF_INT64_TYPENAME
+#undef PDF_UINT8_TYPENAME
+#undef PDF_UINT16_TYPENAME
+#undef PDF_UINT32_TYPENAME
+#undef PDF_UINT64_TYPENAME
 
 
-/*
+/* 
  * Some elderly compilers, notably VC6, don't support LL literals.
  * In those cases we can use the oversized literal without any suffix.
  */
@@ -197,14 +203,14 @@ namespace PoDoFo {
 // space savings on PdfObject / PdfVariant
 #if (defined(_MSC_VER) && _MSC_VER < 1900) || (!defined(_MSC_VER) &&  __cplusplus < 201103)
 #define PODOFO_ENUM_UINT8
-#else
+#else 
 #define PODOFO_ENUM_UINT8	: uint8_t
-#endif
+#endif 
 
 
 /**
  * \page PoDoFo PdfCompilerCompat Header
- *
+ * 
  * <b>PdfCompilerCompat.h</b> gathers up nastyness required for various
  * compiler compatibility into a central place. All compiler-specific defines,
  * wrappers, and the like should be included here and (if necessary) in

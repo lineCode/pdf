@@ -31,55 +31,101 @@
  *   files in the program, then also delete it here.                       *
  ***************************************************************************/
 
-#ifndef PDF_PDFMUTEX_H
-#define PDF_PDFMUTEX_H
+#include "../PdfDefines.h"
+#include "../PdfDefinesPrivate.h"
 
-#if defined(BUILDING_PODOFO)
-
-/* Import the platform-specific implementation of PdfMutex */
-#if defined(PODOFO_MULTI_THREAD)
-#  if defined(_WIN32)
-#    include "PdfMutexImpl_win32.h"
-#  else
-#    include "PdfMutexImpl_pthread.h"
-#  endif
-#else
-#  include "PdfMutexImpl_noop.h"
+#if ! defined(PODOFO_MULTI_THREAD)
+#error "Not a multi-thread build. PdfMutex_null.h should be used instead"
 #endif
 
-namespace PoDoFo { namespace Util {
+#if defined(_WIN32)
+#error "win32 build. PdfMutex_win32.h should be used instead"
+#endif
+
+#include <pthread.h>
+#include <errno.h>
+
+namespace PoDoFo {
+namespace Util {
 
 /**
- * Reentrant mutex implemented by win32 CRITICAL_SECTION or pthread recursive mutex.
+ * A platform independent reentrant mutex, pthread implementation.
+ *  
+ * PdfMutex is *NOT* part of PoDoFo's public API.
  *
- * If PODOFO_MULTI_THREAD is not set, all operations are no-ops and always succeed.
- *
- * A held (locked) PdfMutex may not be acquired (locked) by a thread other than
- * the thread that currently holds it.
- *
- * The thread holding a PdfMutex may acquire it repeatedly. Every acquision must be matched
- * by a release.
- *
- * When a PdfMutex is not held by any thread (ie it is newly allocated or has been released)
- * then exactly one thread attempting to acquire it will succeed. If there is more than one
- * thread trying to acquire a PdfMutex, which thread will succeed is undefined.
- *
+ * This is the pthread implementation, which is
+ * entirely inline.
  */
-class PdfMutex : public PdfMutexImpl
-{
-  // This wrapper/extension class is provided so we can add platform-independent
-  // functionality and helpers if desired.
+class PdfMutexImpl {
+    pthread_mutex_t m_mutex;
   public:
-    PdfMutex() { }
-    ~PdfMutex() { }
+
+    inline PdfMutexImpl();
+
+    inline ~PdfMutexImpl();
+
+    inline void Init( const pthread_mutexattr_t *attr );
+
+    /**
+     * Lock the mutex
+     */
+    inline void Lock();
+
+    /**
+     * Try locking the mutex. 
+     *
+     * \returns true if the mutex was locked
+     * \returns false if the mutex is already locked
+     *                by some other thread
+     */
+    inline bool TryLock();
+
+    /**
+     * Unlock the mutex
+     */
+    inline void UnLock();
 };
 
-};};
+PdfMutexImpl::PdfMutexImpl() {
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init( &m_mutex, &attr );
+}
 
-#else // BUILDING_PODOFO
-// Only a forward-declaration is available for PdfMutex for sources outside the
-// PoDoFo library build its self. PdfMutex is not public API.
-namespace PoDoFo { namespace Util { class PdfMutex; }; };
-#endif
+PdfMutexImpl::~PdfMutexImpl()
+{
+    pthread_mutex_destroy( &m_mutex );
+}
 
-#endif
+void PdfMutexImpl::Lock()
+{
+    if( pthread_mutex_lock( &m_mutex ) != 0 ) 
+    {
+	    PODOFO_RAISE_ERROR( ePdfError_MutexError );
+    }
+}
+
+bool PdfMutexImpl::TryLock()
+{
+    int nRet = pthread_mutex_trylock( &m_mutex );
+    if( nRet == 0 )
+	    return true;
+    else if( nRet == EBUSY )
+	    return false;
+    else
+    {
+	    PODOFO_RAISE_ERROR( ePdfError_MutexError );
+    }
+}
+
+void PdfMutexImpl::UnLock()
+{
+    if( pthread_mutex_unlock( &m_mutex ) != 0 )
+    {
+	    PODOFO_RAISE_ERROR( ePdfError_MutexError );
+    }
+}
+
+}; // Util
+}; // PoDoFo

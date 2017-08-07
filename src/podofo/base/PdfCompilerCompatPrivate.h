@@ -5,24 +5,6 @@
 #error Include PdfDefinesPrivate.h instead
 #endif
 
-#if defined(_WIN32) || defined(_WIN64)
-#  include <winsock2.h>
-#  include <windows.h>
-#  if defined(GetObject)
-#    undef GetObject // Horrible windows.h macro definition that breaks things
-#  endif
-#  if defined(DrawText)
-#    undef DrawText // Horrible windows.h macro definition that breaks things
-#  endif
-#  if defined(CreateFont)
-#    undef CreateFont
-#  endif
-#endif
-
-#if PODOFO_HAVE_ARPA_INET_H
-#  include <arpa/inet.h>
-#endif
-
 #if defined(__BORLANDC__) || defined( __TURBOC__)
    // Borland Turbo C has a broken "<cmath>" but provides a usable "math.h"
    // and it needs a bunch of other includes
@@ -38,6 +20,57 @@
 #  include <cmath>
 #  include <cstring>
 #  include <ctime>
+#endif
+
+
+#if PODOFO_HAVE_WINSOCK2_H
+#  ifdef PODOFO_MULTI_THREAD
+#    if defined(_WIN32) || defined(_WIN64)
+#      ifndef _WIN32_WINNT
+#        define _WIN32_WINNT 0x0400 // Make the TryEnterCriticalSection method available
+#        include <winsock2.h>       // This will include windows.h, so we have to define _WIN32_WINNT
+                                    // if we want to use threads later.
+#        undef _WIN32_WINNT 
+#      else
+#        include <winsock2.h>
+#      endif // _WIN32_WINNT
+#    endif // _WIN32 || _WIN64
+#  else
+#    include <winsock2.h>
+#  endif // PODOFO_MULTI_THREAD
+#endif
+
+#if PODOFO_HAVE_ARPA_INET_H
+#  include <arpa/inet.h>
+#endif
+
+#ifdef PODOFO_MULTI_THREAD
+#  if defined(_WIN32) || defined(_WIN64)
+#    if defined(_MSC_VER) && !defined(_WINSOCK2API_)
+#      error <winsock2.h> must be included before <windows.h>, config problem?
+#    endif
+#    ifndef _WIN32_WINNT
+#      define _WIN32_WINNT 0x0400 // Make the TryEnterCriticalSection method available
+#      include <windows.h>
+#      undef _WIN32_WINNT 
+#    else
+#      include <windows.h>
+#    endif // _WIN32_WINNT
+#  else
+#    include <pthread.h>
+#  endif // _WIN32
+#endif // PODOFO_MULTI_THREAD
+
+#if defined(_WIN32) || defined(_WIN64)
+#  if defined(GetObject)
+#    undef GetObject // Horrible windows.h macro definition that breaks things
+#  endif
+#  if defined(DrawText)
+#    undef DrawText // Horrible windows.h macro definition that breaks things
+#  endif
+#  if defined(CreateFont)
+#    undef CreateFont
+#  endif
 #endif
 
 namespace PoDoFo {
@@ -181,7 +214,7 @@ inline void podofo_unused(T &t) { (void)t; }
 
 /**
  * \page PoDoFo PdfCompilerCompatPrivate Header
- *
+ * 
  * <b>PdfCompilerCompatPrivate.h</b> gathers up nastyness required for various
  * compiler compatibility into a central place. All compiler-specific defines,
  * wrappers, and the like should be included here and (if necessary) in

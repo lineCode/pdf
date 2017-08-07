@@ -40,31 +40,27 @@
 namespace PoDoFo {
 namespace Util {
 
-/**
+/** 
  * A wrapper around PdfMutex.
  * The mutex is locked in the constructor
  * and unlocked in the destructor.
- *
+ * 
  * In debug builds all exceptions thrown by the mutex implementation
  * are caught and logged before being rethrown.
- *
+ *  
  * Note that PdfMutexWrapper is *not* part of PoDoFo's public API.
  */
 class PdfMutexWrapper {
   public:
     /** Lock a mutex.
-     *
+     * 
      *  \param rMutex the mutex to be locked.
      */
     PODOFO_NOTHROW inline PdfMutexWrapper( PdfMutex & rMutex );
 
     /** Unlocks the mutex on destruction
      */
-#if defined(DEBUG)
-    inline ~PdfMutexWrapper() noexcept(false);
-#else
     inline ~PdfMutexWrapper();
-#endif
 
   private:
     /** default constructor, not implemented
@@ -86,28 +82,22 @@ PdfMutexWrapper::PdfMutexWrapper( PdfMutex & rMutex )
     m_rMutex.Lock();
 }
 
-#if defined(DEBUG)
-
-PdfMutexWrapper::~PdfMutexWrapper() noexcept(false)
-{
-    try {
-	      m_rMutex.UnLock();
-    }
-    catch( PdfError & rError )
-    {
-	      rError.PrintErrorMsg();
-        throw rError;
-    }
-}
-
-#else
 
 PdfMutexWrapper::~PdfMutexWrapper()
 {
+#if defined(DEBUG)
+    try {
+	m_rMutex.UnLock();
+    }
+    catch( PdfError & rError ) 
+    {
+	rError.PrintErrorMsg();
+        throw rError;
+    }
+#else
     m_rMutex.UnLock();
-}
-
 #endif
+}
 
 }; // Util
 }; // PoDoFo

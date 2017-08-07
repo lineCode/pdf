@@ -454,7 +454,7 @@ class PODOFO_API PdfFilterFactory {
  public:
     /** Create a filter from an enum.
      *
-     *  Ownership is transferred to the caller, who should let the unique_ptr
+     *  Ownership is transferred to the caller, who should let the auto_ptr
      *  the filter is returned in take care of freeing it when they're done
      *  with it.
      *
