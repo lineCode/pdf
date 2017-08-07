@@ -852,7 +852,6 @@ void PdfLZWFilter::InitTable()
 /*
  * Handlers for errors inside the JPeg library
  */
-extern "C" {
 void JPegErrorExit(j_common_ptr cinfo)
 {
 #if 1
@@ -869,7 +868,6 @@ void JPegErrorOutput(j_common_ptr, int)
 {
 }
 
-};
 
 /*
  * The actual filter implementation
